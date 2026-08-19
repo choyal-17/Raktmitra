@@ -1,0 +1,30 @@
+.custom-link {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.custom-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px; /* pushes underline lower */
+  width: 0;
+  height: 2px; /* thickness of underline */
+  background-color: #b00020;
+  transition: width 0.3s ease;
+}
+
+.custom-link:hover::after {
+  width: 100%; /* underline expands smoothly */
+}
+.modal-content {
+  border-radius: 10px;
+}
+
+.modal-header {
+  border-bottom: none;
+}
+
+.modal-footer {
+  border-top: none;
+}
