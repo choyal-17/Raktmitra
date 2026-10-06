@@ -4,23 +4,32 @@ import { useParams, useNavigate } from "react-router-dom";
 const DonorDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [donor, setDonor] = useState(null);
   const [error, setError] = useState(null);
 
-  // Correct Backend URL Logic
-const url = "http://localhost:8080" || "http://localhost:8080";
+  const url = "http://localhost:8080";
 
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
     const token = localStorage.getItem("token");
 
+    // Check login
     if (!loggedIn || !token) {
       navigate("/login");
       return;
     }
 
+    // Check donor ID
+    if (!id || id === "undefined" || id === "null") {
+      setError("Donor ID is missing");
+      return;
+    }
+
     const fetchDonor = async () => {
       try {
+        setError(null);
+
         const response = await fetch(`${url}/user/donor/${id}`, {
           method: "GET",
           headers: {
@@ -29,30 +38,54 @@ const url = "http://localhost:8080" || "http://localhost:8080";
           },
         });
 
-        if (response.status === 403) throw new Error("Forbidden access");
-        if (!response.ok) throw new Error("Failed to fetch donor details");
-
         const data = await response.json();
-        setDonor(data);
+
+        console.log("Donor Details Response:", data);
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to fetch donor details"
+          );
+        }
+
+        // Backend response:
+        // { success: true, donor: {...} }
+        setDonor(data.donor || data);
       } catch (err) {
-        setError(err.message);
         console.error("Error fetching donor:", err);
+        setError(err.message || "Failed to fetch donor details");
       }
     };
 
     fetchDonor();
   }, [navigate, id]);
 
-  if (error)
+  // Loading
+  if (!donor && !error) {
+    return (
+      <p className="text-center mt-5">
+        Loading donor info...
+      </p>
+    );
+  }
+
+  // Error
+  if (error) {
     return (
       <div className="container py-5 text-center">
         <h2 className="text-danger">{error}</h2>
+
+        <button
+          className="btn btn-secondary mt-3"
+          onClick={() => navigate(-1)}
+        >
+          ← Back
+        </button>
       </div>
     );
+  }
 
-  if (!donor) return <p className="text-center mt-5">Loading donor info...</p>;
-
-  // ************** MOBILE SAFE WHATSAPP CONNECT FUNCTION *****************
+  // WhatsApp
   const handleWhatsApp = () => {
     if (!donor.phone) {
       alert("Phone number not available for this donor.");
@@ -60,35 +93,47 @@ const url = "http://localhost:8080" || "http://localhost:8080";
     }
 
     const message = `Hello ${donor.name}, I found your profile on RaktMitra. I need blood of your group (${donor.bloodGroup}). Can we connect? 🙏`;
+
     const encodedMessage = encodeURIComponent(message);
 
     let phone = donor.phone.toString().trim();
 
-    phone = phone.replace(/[^0-9]/g, ""); // Remove +, spaces, symbols
+    // Remove +, spaces, brackets, hyphens etc.
+    phone = phone.replace(/[^0-9]/g, "");
 
+    // Indian 10 digit number
     if (phone.length === 10) {
-      phone = "91" + phone; // Add India code automatically
+      phone = "91" + phone;
     }
 
-    // FINAL: WhatsApp safe URL
     const waUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
 
-    window.location.href = waUrl; // Mobile-friendly redirect
+    window.location.href = waUrl;
   };
 
   return (
     <div className="container py-4">
-      <button className="btn btn-secondary mb-3" onClick={() => navigate(-1)}>
+
+      {/* Back Button */}
+      <button
+        className="btn btn-secondary mb-3"
+        onClick={() => navigate(-1)}
+      >
         ← Back
       </button>
 
+      {/* Donor Card */}
       <div className="card shadow border-0 p-4">
+
         <h2 className="text-danger fw-bold text-center mb-4">
           {donor.name}'s Profile
         </h2>
 
         <div className="row align-items-center">
+
+          {/* Image */}
           <div className="col-md-5 text-center mb-4">
+
             {donor.imageUrl ? (
               <img
                 src={donor.imageUrl}
@@ -107,6 +152,8 @@ const url = "http://localhost:8080" || "http://localhost:8080";
                 className="d-flex align-items-center justify-content-center bg-light text-danger"
                 style={{
                   height: "250px",
+                  width: "70%",
+                  margin: "10px auto 0",
                   fontSize: "80px",
                   fontWeight: "bold",
                   borderRadius: "8px",
@@ -115,34 +162,61 @@ const url = "http://localhost:8080" || "http://localhost:8080";
                 {donor.name?.charAt(0).toUpperCase()}
               </div>
             )}
+
           </div>
 
+          {/* Details */}
           <div className="col-md-7">
+
             <div className="mb-3">
-              <p><strong>Gender:</strong> {donor.gender}</p>
-              <p><strong>Blood Group:</strong> {donor.bloodGroup}</p>
-              <p><strong>Contact:</strong> {donor.phone || "N/A"}</p>
+
+              <p>
+                <strong>Gender:</strong>{" "}
+                {donor.gender || "N/A"}
+              </p>
+
+              <p>
+                <strong>Blood Group:</strong>{" "}
+                {donor.bloodGroup || "N/A"}
+              </p>
+
+              <p>
+                <strong>Contact:</strong>{" "}
+                {donor.phone || "N/A"}
+              </p>
+
               <p>
                 <strong>Date of Birth:</strong>{" "}
-                {donor.dob ? new Date(donor.dob).toLocaleDateString() : "N/A"}
+                {donor.dob
+                  ? new Date(donor.dob).toLocaleDateString()
+                  : "N/A"}
               </p>
+
               <p>
-                <strong>Address:</strong> {donor.address}, {donor.city},{" "}
-                {donor.state}
+                <strong>Address:</strong>{" "}
+                {donor.address || "N/A"}
+                {donor.city ? `, ${donor.city}` : ""}
+                {donor.state ? `, ${donor.state}` : ""}
               </p>
+
               <p>
-                <strong>Food Preference:</strong> {donor.foodPreference}
+                <strong>Food Preference:</strong>{" "}
+                {donor.foodPreference || "N/A"}
               </p>
+
               <p>
                 <strong>Alcohol Consumption:</strong>{" "}
-                {donor.alcoholConsumption === "yes" ? "Yes" : "No"}
+                {donor.alcoholConsumption || "N/A"}
               </p>
+
               <p>
                 <strong>Smoking Status:</strong>{" "}
-                {donor.smokingStatus === "yes" ? "Yes" : "No"}
+                {donor.smokingStatus || "N/A"}
               </p>
+
             </div>
 
+            {/* WhatsApp Button */}
             <button
               className="btn btn-success d-flex align-items-center gap-2 px-4"
               onClick={handleWhatsApp}
@@ -150,6 +224,7 @@ const url = "http://localhost:8080" || "http://localhost:8080";
               <i className="bi bi-whatsapp fs-5"></i>
               Contact via WhatsApp
             </button>
+
           </div>
         </div>
       </div>

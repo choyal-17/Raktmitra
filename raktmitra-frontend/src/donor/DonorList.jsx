@@ -4,6 +4,7 @@ import { Spinner } from "react-bootstrap";
 
 const DonorList = () => {
   const navigate = useNavigate();
+
   const [donors, setDonors] = useState([]);
   const [filteredDonors, setFilteredDonors] = useState([]);
   const [error, setError] = useState(null);
@@ -19,27 +20,60 @@ const DonorList = () => {
   const token = localStorage.getItem("token");
 
   const statesOfIndia = [
-    "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh",
-    "Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka",
-    "Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram",
-    "Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana",
-    "Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi",
-    "Jammu and Kashmir","Ladakh","Pondicherry","Chandigarh","Andaman & Nicobar",
-    "Daman & Diu","Lakshadweep"
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+    "Delhi",
+    "Jammu and Kashmir",
+    "Ladakh",
+    "Pondicherry",
+    "Chandigarh",
+    "Andaman & Nicobar",
+    "Daman & Diu",
+    "Lakshadweep",
   ];
 
+  // Check login
   useEffect(() => {
     if (!loggedIn || !token) {
       navigate("/login");
     }
   }, [loggedIn, token, navigate]);
 
+  // Fetch donors
   useEffect(() => {
     if (!token) return;
 
     const fetchDonors = async () => {
       try {
         setLoading(true);
+        setError(null);
+
         const response = await fetch(`${url}/user/donor`, {
           method: "GET",
           headers: {
@@ -48,26 +82,54 @@ const DonorList = () => {
           },
         });
 
-        if (response.status === 403) throw new Error("Forbidden");
-        if (!response.ok) throw new Error("Failed to fetch donor data.");
-
         const data = await response.json();
-        setDonors(data);
-        setFilteredDonors(data);
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to fetch donor data.");
+        }
+
+        console.log("Donor List Response:", data);
+
+        // Backend may return either array or { donors: [] }
+        const donorList = Array.isArray(data)
+          ? data
+          : data.donors || [];
+
+        setDonors(donorList);
+        setFilteredDonors(donorList);
       } catch (err) {
+        console.error("Error fetching donors:", err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
+
     fetchDonors();
   }, [token]);
 
+  // Filter donors
   useEffect(() => {
-    let temp = donors;
-    if (city) temp = temp.filter((d) => d.city?.toLowerCase().includes(city.toLowerCase()));
-    if (state) temp = temp.filter((d) => d.state?.toLowerCase() === state.toLowerCase());
-    if (gender) temp = temp.filter((d) => d.gender?.toLowerCase() === gender.toLowerCase());
+    let temp = [...donors];
+
+    if (city) {
+      temp = temp.filter((d) =>
+        d.city?.toLowerCase().includes(city.toLowerCase())
+      );
+    }
+
+    if (state) {
+      temp = temp.filter(
+        (d) => d.state?.toLowerCase() === state.toLowerCase()
+      );
+    }
+
+    if (gender) {
+      temp = temp.filter(
+        (d) => d.gender?.toLowerCase() === gender.toLowerCase()
+      );
+    }
+
     setFilteredDonors(temp);
   }, [city, state, gender, donors]);
 
@@ -109,8 +171,11 @@ const DonorList = () => {
             onChange={(e) => setState(e.target.value)}
           >
             <option value="">State</option>
+
             {statesOfIndia.map((st, index) => (
-              <option key={index} value={st}>{st}</option>
+              <option key={index} value={st}>
+                {st}
+              </option>
             ))}
           </select>
 
@@ -130,41 +195,64 @@ const DonorList = () => {
 
       {/* Donor Cards */}
       {filteredDonors.length === 0 ? (
-        <p className="text-center text-muted">No donors found.</p>
+        <p className="text-center text-muted">
+          No donors found.
+        </p>
       ) : (
         <div className="row g-4">
+
           {filteredDonors.map((donor) => (
-            <div key={donor.id} className="col-lg-3 col-md-4 col-sm-6">
+            <div
+              key={donor._id}
+              className="col-lg-3 col-md-4 col-sm-6"
+            >
               <div className="card donor-card h-100 shadow-sm border-0">
+
                 <div className="image-wrapper d-flex justify-content-center align-items-center">
+
                   {donor.imageUrl ? (
-                    <img src={donor.imageUrl} alt={donor.name} className="donor-image" />
+                    <img
+                      src={donor.imageUrl}
+                      alt={donor.name}
+                      className="donor-image"
+                    />
                   ) : (
                     <div className="placeholder">
                       {donor.name?.charAt(0).toUpperCase()}
                     </div>
                   )}
+
                 </div>
 
                 <div className="card-body text-center">
-                  <h5 className="card-title text-danger fw-bold">{donor.name}</h5>
-                  <p className="text-muted"><strong>Blood:</strong> {donor.bloodGroup}</p>
+
+                  <h5 className="card-title text-danger fw-bold">
+                    {donor.name}
+                  </h5>
+
+                  <p className="text-muted">
+                    <strong>Blood:</strong> {donor.bloodGroup}
+                  </p>
+
                   <button
                     className="btn btn-outline-danger w-100"
-                    onClick={() => navigate(`/donor/${donor.id}`)}
+                    onClick={() =>
+                      navigate(`/donor/${donor._id}`)
+                    }
                   >
                     View Profile
                   </button>
+
                 </div>
               </div>
             </div>
           ))}
+
         </div>
       )}
 
-      {/* ALL CSS */}
+      {/* CSS */}
       <style>{`
-        /* Filter row always single line */
         .filter-row {
           display: flex;
           flex-wrap: nowrap;
@@ -175,12 +263,12 @@ const DonorList = () => {
           min-width: 0;
         }
 
-        /* Mobile: keep 3 filters in one row */
         @media (max-width: 576px) {
           .filter-row {
             overflow-x: auto;
             white-space: nowrap;
           }
+
           .filter-bar .form-control,
           .filter-bar .form-select {
             flex-basis: 32%;

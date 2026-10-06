@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: true,
+      trim: true,
     },
 
     bloodGroup: {
@@ -35,11 +36,13 @@ const userSchema = new mongoose.Schema(
     city: {
       type: String,
       required: true,
+      trim: true,
     },
 
     state: {
       type: String,
       required: true,
+      trim: true,
     },
 
     age: {
@@ -69,6 +72,20 @@ const userSchema = new mongoose.Schema(
     totalDonations: {
       type: Number,
       default: 0,
+    },
+
+    // Email verification
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailOtp: {
+      type: String,
+    },
+
+    emailOtpExpires: {
+      type: Date,
     },
   },
   {
