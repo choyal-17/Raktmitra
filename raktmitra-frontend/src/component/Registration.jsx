@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
-const url = "http://localhost:8080";
+const API_URL = "http://localhost:8080";
 
 const Registration = () => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,55 +21,103 @@ const Registration = () => {
 
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // ================= HANDLE INPUT =================
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // ================= REGISTER =================
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage("");
+
+    // Password validation
     if (formData.password.length < 8 || formData.password.length > 12) {
       setMessage("Password must be between 8 and 12 characters.");
       return;
     }
 
-    fetch(`${url}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    })
-      .then((res) => {
-        if (!res.ok) return res.text().then((text) => Promise.reject(text));
-        return res.json();
-      })
-      .then(() => {
-        setMessage("Registration successful!");
-        navigate("/login");
-      })
-      .catch((err) => {
-        setMessage("Error: " + err);
+    try {
+      setLoading(true);
+
+      const response = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          password: formData.password,
+          bloodGroup: formData.bloodGroup,
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          age: formData.age ? Number(formData.age) : undefined,
+          gender: formData.gender || undefined,
+        }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      if (data.success) {
+        setMessage("Registration successful! Redirecting to login...");
+
+        setTimeout(() => {
+          navigate("/login");
+        }, 1000);
+      } else {
+        setMessage(data.message || "Registration failed");
+      }
+    } catch (error) {
+      console.error("Registration Error:", error);
+
+      setMessage(
+        error.message || "Server error. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="container my-4">
       <div
         className="card shadow p-4 rounded-3 mx-auto"
-        style={{ maxWidth: "450px", width: "90%" }}
+        style={{
+          maxWidth: "450px",
+          width: "90%",
+        }}
       >
         <h2 className="text-center mb-3 text-danger fw-bold">
           RaktMitra Registration
         </h2>
-        <p className="text-center text-muted">वो दोस्ती जो ज़िंदगी बचाए</p>
+
+        <p className="text-center text-muted">
+          वो दोस्ती जो ज़िंदगी बचाए
+        </p>
 
         {message && (
-          <div className="alert alert-info text-center">{message}</div>
+          <div className="alert alert-info text-center">
+            {message}
+          </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Name */}
+          {/* NAME */}
           <div className="mb-3">
             <input
               type="text"
@@ -81,7 +130,7 @@ const Registration = () => {
             />
           </div>
 
-          {/* Email */}
+          {/* EMAIL */}
           <div className="mb-3">
             <input
               type="email"
@@ -94,7 +143,7 @@ const Registration = () => {
             />
           </div>
 
-          {/* Phone */}
+          {/* PHONE */}
           <div className="mb-3">
             <input
               type="tel"
@@ -107,7 +156,7 @@ const Registration = () => {
             />
           </div>
 
-          {/* Blood Group */}
+          {/* BLOOD GROUP */}
           <div className="mb-3">
             <select
               className="form-select"
@@ -117,13 +166,25 @@ const Registration = () => {
               required
             >
               <option value="">Select Blood Group</option>
-              {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((bg) => (
-                <option key={bg} value={bg}>{bg}</option>
+
+              {[
+                "A+",
+                "A-",
+                "B+",
+                "B-",
+                "AB+",
+                "AB-",
+                "O+",
+                "O-",
+              ].map((bg) => (
+                <option key={bg} value={bg}>
+                  {bg}
+                </option>
               ))}
             </select>
           </div>
 
-          {/* City */}
+          {/* CITY */}
           <div className="mb-3">
             <input
               type="text"
@@ -136,7 +197,7 @@ const Registration = () => {
             />
           </div>
 
-          {/* State */}
+          {/* STATE */}
           <div className="mb-3">
             <input
               type="text"
@@ -149,7 +210,7 @@ const Registration = () => {
             />
           </div>
 
-          {/* Age (optional) */}
+          {/* AGE */}
           <div className="mb-3">
             <input
               type="number"
@@ -158,12 +219,12 @@ const Registration = () => {
               placeholder="Age (optional)"
               value={formData.age}
               onChange={handleChange}
-              min={18}
-              max={65}
+              min="18"
+              max="65"
             />
           </div>
 
-          {/* Gender (optional) */}
+          {/* GENDER */}
           <div className="mb-3">
             <select
               className="form-select"
@@ -178,7 +239,7 @@ const Registration = () => {
             </select>
           </div>
 
-          {/* Password */}
+          {/* PASSWORD */}
           <div className="mb-3 position-relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -191,28 +252,37 @@ const Registration = () => {
               minLength={8}
               maxLength={12}
             />
-            <small className="text-muted">Password must be 8–12 characters long.</small>
+
+            <small className="text-muted">
+              Password must be 8–12 characters long.
+            </small>
+
             <span
               className="position-absolute"
               style={{
-                top: "25%",
+                top: "20px",
                 right: "10px",
-                transform: "translateY(-50%)",
                 cursor: "pointer",
                 color: "#555",
               }}
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword((prev) => !prev)}
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
 
-          <button type="submit" className="btn btn-danger w-100">
-            Register
+          {/* BUTTON */}
+          <button
+            type="submit"
+            className="btn btn-danger w-100"
+            disabled={loading}
+          >
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
       </div>
 
+      {/* LOGIN */}
       <div className="text-center mt-3">
         <small>
           Already have an account?{" "}
@@ -221,6 +291,7 @@ const Registration = () => {
           </a>
         </small>
       </div>
+
       <br />
     </div>
   );

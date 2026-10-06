@@ -1,45 +1,114 @@
-const router    = require('express').Router();
-const BloodBank = require('../models/BloodBank');
+const router = require("express").Router();
 
-// GET /banks - public list
-router.get('/banks', async (req, res) => {
+const BloodBank = require("../models/BloodBank");
+const auth = require("../middleware/auth");
+const admin = require("../middleware/admin");
+
+// ================= PUBLIC =================
+
+// GET /banks
+router.get("/banks", async (req, res) => {
   try {
     const banks = await BloodBank.find().sort({ name: 1 });
+
     res.json(banks);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Get banks error:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
-// Admin routes
+// ================= ADMIN =================
+
 // GET /admin/banks
-router.get('/admin/banks', async (req, res) => {
+router.get("/admin/banks", auth, admin, async (req, res) => {
   try {
     const banks = await BloodBank.find().sort({ createdAt: -1 });
-    res.json(banks);
+
+    res.json({
+      success: true,
+      banks,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Get admin banks error:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
 // POST /admin/add
-router.post('/admin/add', async (req, res) => {
+router.post("/admin/add", auth, admin, async (req, res) => {
   try {
-    const { name, city, state, phone, address, email } = req.body;
-    const bank = await BloodBank.create({ name, city, state, phone, address, email });
-    res.status(201).json(bank);
+    const {
+      name,
+      city,
+      state,
+      phone,
+      address,
+      email,
+    } = req.body;
+
+    if (!name || !city || !state || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide all required fields",
+      });
+    }
+
+    const bank = await BloodBank.create({
+      name,
+      city,
+      state,
+      phone,
+      address,
+      email,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Blood bank added successfully",
+      bank,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Add bank error:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
 // DELETE /admin/delete/:id
-router.delete('/admin/delete/:id', async (req, res) => {
+router.delete("/admin/delete/:id", auth, admin, async (req, res) => {
   try {
-    await BloodBank.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted successfully' });
+    const bank = await BloodBank.findByIdAndDelete(req.params.id);
+
+    if (!bank) {
+      return res.status(404).json({
+        success: false,
+        message: "Blood bank not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Blood bank deleted successfully",
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Delete bank error:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
