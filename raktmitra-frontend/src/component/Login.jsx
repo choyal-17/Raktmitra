@@ -33,16 +33,26 @@ const Login = () => {
     e.preventDefault();
 
     setMessage("");
-    setLoading(true);
+
+    const email = formData.email.trim().toLowerCase();
+
+    if (!email || !formData.password) {
+      setMessage("Please enter email and password.");
+      return;
+    }
 
     try {
+      setLoading(true);
+
       const response = await fetch(`${API_URL}/signin`, {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
-          email: formData.email.trim().toLowerCase(),
+          email,
           password: formData.password,
         }),
       });
@@ -51,21 +61,68 @@ const Login = () => {
 
       console.log("Login Response:", data);
 
-      // Backend error
+      // =================================================
+      // EMAIL NOT VERIFIED
+      // =================================================
+
+      if (
+        response.status === 403 &&
+        data.emailVerificationRequired
+      ) {
+        setMessage(
+          "Please verify your email before logging in."
+        );
+
+        setTimeout(() => {
+          navigate("/verify-email", {
+            state: {
+              email,
+            },
+          });
+        }, 1000);
+
+        return;
+      }
+
+      // =================================================
+      // BACKEND ERROR
+      // =================================================
+
       if (!response.ok) {
-        throw new Error(data.message || "Invalid email or password");
+        throw new Error(
+          data.message || "Invalid email or password."
+        );
       }
 
-      // Backend success
+      // =================================================
+      // SUCCESS VALIDATION
+      // =================================================
+
       if (!data.success || !data.token || !data.user) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(
+          data.message || "Login failed."
+        );
       }
 
-      // ================= SAVE LOGIN DATA =================
+      // =================================================
+      // SAVE LOGIN DATA
+      // =================================================
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem(
+        "token",
+        data.token
+      );
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
+
+      localStorage.setItem(
+        "isLoggedIn",
+        "true"
+      );
+
       localStorage.setItem(
         "role",
         data.user.role || "USER"
@@ -73,7 +130,9 @@ const Login = () => {
 
       setMessage("✅ Login successful!");
 
-      // ================= REDIRECT =================
+      // =================================================
+      // REDIRECT
+      // =================================================
 
       setTimeout(() => {
         if (data.user.role === "ADMIN") {
@@ -82,11 +141,13 @@ const Login = () => {
           navigate("/user/home");
         }
       }, 500);
+
     } catch (error) {
       console.error("Login Error:", error);
 
       setMessage(
-        error.message || "Server error, please try again later."
+        error.message ||
+          "Server error. Please try again later."
       );
     } finally {
       setLoading(false);
@@ -107,6 +168,9 @@ const Login = () => {
           width: "350px",
         }}
       >
+
+        {/* ================= TITLE ================= */}
+
         <h2 className="text-center text-danger fw-bold mb-3">
           RaktMitra Login
         </h2>
@@ -115,20 +179,24 @@ const Login = () => {
           वो दोस्ती जो ज़िंदगी बचाए
         </p>
 
+        {/* ================= MESSAGE ================= */}
+
         {message && (
-          <p
-            className="text-center mt-2"
-            style={{
-              color: message.includes("✅")
-                ? "green"
-                : "red",
-            }}
+          <div
+            className={`alert ${
+              message.includes("successful")
+                ? "alert-success"
+                : "alert-danger"
+            } text-center`}
           >
             {message}
-          </p>
+          </div>
         )}
 
+        {/* ================= FORM ================= */}
+
         <form onSubmit={handleSubmit}>
+
           {/* EMAIL */}
 
           <input
@@ -144,8 +212,13 @@ const Login = () => {
           {/* PASSWORD */}
 
           <div className="position-relative mb-3">
+
             <input
-              type={showPassword ? "text" : "password"}
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
+              }
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -164,7 +237,9 @@ const Login = () => {
                 color: "#555",
               }}
               onClick={() =>
-                setShowPassword((prev) => !prev)
+                setShowPassword(
+                  (prev) => !prev
+                )
               }
             >
               {showPassword ? (
@@ -173,6 +248,7 @@ const Login = () => {
                 <FaEye />
               )}
             </span>
+
           </div>
 
           {/* LOGIN BUTTON */}
@@ -182,15 +258,19 @@ const Login = () => {
             className="btn btn-danger w-100"
             disabled={loading}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading
+              ? "Logging in..."
+              : "Login"}
           </button>
+
         </form>
 
-        {/* REGISTER */}
+        {/* ================= REGISTER ================= */}
 
         <div className="text-center mt-3">
           <small>
             Don't have an account?{" "}
+
             <a
               href="/register"
               className="text-danger fw-bold"
@@ -199,6 +279,7 @@ const Login = () => {
             </a>
           </small>
         </div>
+
       </div>
     </div>
   );

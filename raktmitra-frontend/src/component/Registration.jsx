@@ -23,7 +23,9 @@ const Registration = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ================= HANDLE INPUT =================
+  // =====================================================
+  // HANDLE INPUT CHANGE
+  // =====================================================
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,67 +36,136 @@ const Registration = () => {
     }));
   };
 
-  // ================= REGISTER =================
+  // =====================================================
+  // REGISTER
+  // =====================================================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setMessage("");
 
     // Password validation
-    if (formData.password.length < 8 || formData.password.length > 12) {
-      setMessage("Password must be between 8 and 12 characters.");
+    if (
+      formData.password.length < 8 ||
+      formData.password.length > 12
+    ) {
+      setMessage(
+        "Password must be between 8 and 12 characters."
+      );
       return;
     }
 
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_URL}/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          phone: formData.phone.trim(),
-          password: formData.password,
-          bloodGroup: formData.bloodGroup,
-          city: formData.city.trim(),
-          state: formData.state.trim(),
-          age: formData.age ? Number(formData.age) : undefined,
-          gender: formData.gender || undefined,
-        }),
-      });
+      const email = formData.email
+        .trim()
+        .toLowerCase();
+
+      const response = await fetch(
+        `${API_URL}/register`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            name: formData.name.trim(),
+
+            email: email,
+
+            phone: formData.phone.trim(),
+
+            password: formData.password,
+
+            bloodGroup: formData.bloodGroup,
+
+            city: formData.city.trim(),
+
+            state: formData.state.trim(),
+
+            age: formData.age
+              ? Number(formData.age)
+              : undefined,
+
+            gender:
+              formData.gender || undefined,
+          }),
+        }
+      );
 
       const data = await response.json();
 
+      console.log(
+        "Registration Response:",
+        data
+      );
+
+      // =================================================
+      // ERROR RESPONSE
+      // =================================================
+
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(
+          data.message ||
+            "Registration failed"
+        );
       }
 
-      if (data.success) {
-        setMessage("Registration successful! Redirecting to login...");
+      // =================================================
+      // OTP SENT SUCCESSFULLY
+      // =================================================
+
+      if (
+        data.success &&
+        data.emailVerificationRequired
+      ) {
+        setMessage(
+          "✅ OTP sent to your email. Please verify your email."
+        );
 
         setTimeout(() => {
-          navigate("/login");
-        }, 1000);
-      } else {
-        setMessage(data.message || "Registration failed");
+          navigate("/verify-email", {
+            state: {
+              email: email,
+            },
+          });
+        }, 800);
+
+        return;
       }
-    } catch (error) {
-      console.error("Registration Error:", error);
 
       setMessage(
-        error.message || "Server error. Please try again."
+        data.message ||
+          "Registration failed"
       );
+
+    } catch (error) {
+      console.error(
+        "Registration Error:",
+        error
+      );
+
+      setMessage(
+        error.message ||
+          "Server error. Please try again."
+      );
+
     } finally {
       setLoading(false);
     }
   };
 
+  // =====================================================
+  // UI
+  // =====================================================
+
   return (
     <div className="container my-4">
+
       <div
         className="card shadow p-4 rounded-3 mx-auto"
         style={{
@@ -102,6 +173,7 @@ const Registration = () => {
           width: "90%",
         }}
       >
+
         <h2 className="text-center mb-3 text-danger fw-bold">
           RaktMitra Registration
         </h2>
@@ -110,6 +182,8 @@ const Registration = () => {
           वो दोस्ती जो ज़िंदगी बचाए
         </p>
 
+        {/* MESSAGE */}
+
         {message && (
           <div className="alert alert-info text-center">
             {message}
@@ -117,7 +191,9 @@ const Registration = () => {
         )}
 
         <form onSubmit={handleSubmit}>
+
           {/* NAME */}
+
           <div className="mb-3">
             <input
               type="text"
@@ -131,6 +207,7 @@ const Registration = () => {
           </div>
 
           {/* EMAIL */}
+
           <div className="mb-3">
             <input
               type="email"
@@ -144,6 +221,7 @@ const Registration = () => {
           </div>
 
           {/* PHONE */}
+
           <div className="mb-3">
             <input
               type="tel"
@@ -157,6 +235,7 @@ const Registration = () => {
           </div>
 
           {/* BLOOD GROUP */}
+
           <div className="mb-3">
             <select
               className="form-select"
@@ -165,7 +244,9 @@ const Registration = () => {
               onChange={handleChange}
               required
             >
-              <option value="">Select Blood Group</option>
+              <option value="">
+                Select Blood Group
+              </option>
 
               {[
                 "A+",
@@ -177,7 +258,10 @@ const Registration = () => {
                 "O+",
                 "O-",
               ].map((bg) => (
-                <option key={bg} value={bg}>
+                <option
+                  key={bg}
+                  value={bg}
+                >
                   {bg}
                 </option>
               ))}
@@ -185,6 +269,7 @@ const Registration = () => {
           </div>
 
           {/* CITY */}
+
           <div className="mb-3">
             <input
               type="text"
@@ -198,6 +283,7 @@ const Registration = () => {
           </div>
 
           {/* STATE */}
+
           <div className="mb-3">
             <input
               type="text"
@@ -211,6 +297,7 @@ const Registration = () => {
           </div>
 
           {/* AGE */}
+
           <div className="mb-3">
             <input
               type="number"
@@ -225,6 +312,7 @@ const Registration = () => {
           </div>
 
           {/* GENDER */}
+
           <div className="mb-3">
             <select
               className="form-select"
@@ -232,17 +320,34 @@ const Registration = () => {
               value={formData.gender}
               onChange={handleChange}
             >
-              <option value="">Select Gender (optional)</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
+              <option value="">
+                Select Gender (optional)
+              </option>
+
+              <option value="Male">
+                Male
+              </option>
+
+              <option value="Female">
+                Female
+              </option>
+
+              <option value="Other">
+                Other
+              </option>
             </select>
           </div>
 
           {/* PASSWORD */}
+
           <div className="mb-3 position-relative">
+
             <input
-              type={showPassword ? "text" : "password"}
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
+              }
               className="form-control"
               name="password"
               placeholder="Password"
@@ -265,34 +370,53 @@ const Registration = () => {
                 cursor: "pointer",
                 color: "#555",
               }}
-              onClick={() => setShowPassword((prev) => !prev)}
+              onClick={() =>
+                setShowPassword(
+                  (prev) => !prev
+                )
+              }
             >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
+              {showPassword ? (
+                <FaEyeSlash />
+              ) : (
+                <FaEye />
+              )}
             </span>
+
           </div>
 
-          {/* BUTTON */}
+          {/* REGISTER BUTTON */}
+
           <button
             type="submit"
             className="btn btn-danger w-100"
             disabled={loading}
           >
-            {loading ? "Registering..." : "Register"}
+            {loading
+              ? "Sending OTP..."
+              : "Register"}
           </button>
+
         </form>
       </div>
 
-      {/* LOGIN */}
+      {/* LOGIN LINK */}
+
       <div className="text-center mt-3">
         <small>
           Already have an account?{" "}
-          <a href="/login" className="text-danger fw-bold">
+
+          <a
+            href="/login"
+            className="text-danger fw-bold"
+          >
             Login
           </a>
         </small>
       </div>
 
       <br />
+
     </div>
   );
 };

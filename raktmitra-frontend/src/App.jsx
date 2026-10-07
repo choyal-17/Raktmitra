@@ -26,9 +26,9 @@ import PatientRegistration from "./patient/PatientRegistration.jsx";
 import PatientList from "./patient/PatientList.jsx";
 import ViewPatients from "./admin/ViewPatients.jsx";  
 import PatientDetails from "./patient/PatientDetails.jsx";
-import { Form } from "react-bootstrap";
 import FormSubmitted from "./component/FormSubmitted.jsx";
 import SearchResults from "./component/SearchResults.jsx";
+import VerifyEmail from "./component/VerifyEmail";
 
 
 function App() {
@@ -136,12 +136,15 @@ function App() {
                 )
               }
             />
+            
 
             {/* ---------- PUBLIC ROUTES ---------- */}
              <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Registration />} />
+            <Route path="/verify-email" element={<VerifyEmail />}
+/>
             <Route path="/patients" element={<PatientList />} />
             <Route path="/info" element={<Information />} />
             <Route path="/bloodbanks" element={<BloodBanksList />} />
